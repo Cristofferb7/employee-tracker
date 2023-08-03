@@ -37,7 +37,11 @@ function mainMenu() {
         viewAllRoles();
       } else if (answer.input == "add role") {
         addRole();
-      }
+      } else if (answer.input == "view all employees") {
+      viewAllEmployees();
+    }  else if (answer.input == "add employee") {
+      addEmployees();}
+
     });
 }
 
@@ -80,52 +84,53 @@ function addDepartment() {
 
 // to do here(use all departments function example) >>>
 function viewAllRoles () { 
-  db.query("select * from role;", function (err, data) {
-  if (err) console.log(err);
-  // display all data using console.table
-  console.table(data);
-  mainMenu();
-});
+  const roleQuery = "SELECT r.id, r.title, r.salary, d.name AS department_name FROM role r INNER JOIN department d ON r.department_id = d.id;";
+  db.query(roleQuery, function (err, roles) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    console.table(roles);
+    mainMenu();
+  });
 }
 
 
 // to do here(add deparment function)>>
+
 function addRole() {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "name",
-        message: "What is the name of the new role?",
-      },
-      {
-        type: 'input',
-        name: 'salary',
-        message: 'What is the salary?',
-      },
-      {
-        type: 'input',
-        name: 'department',
-        message: 'What is the name of the department for this role?',
-      }
-    ])
-    .then((answer) => {
-      const title = answer.name;
-      const salary = parseFloat(answer.salary); // Assuming salary is a numeric value
-      const departmentName = answer.department;
+  // Fetch existing department names from the database
+  db.query("SELECT id, name FROM department;", function (fetchErr, departments) {
+    if (fetchErr) {
+      console.log(fetchErr);
+      return;
+    }
 
-      // First, insert the department if it doesn't exist
-      const departmentQuery = 'INSERT INTO department (name) VALUES (?)';
-      db.query(departmentQuery, [departmentName], function (deptErr, deptData) {
-        if (deptErr) {
-          console.log(deptErr);
-          return;
+    inquirer
+      .prompt([
+        {
+          type: "input",
+          name: "name",
+          message: "What is the name of the new role?",
+        },
+        {
+          type: 'input',
+          name: 'salary',
+          message: 'What is the salary?',
+        },
+        {
+          type: 'list',
+          name: 'department',
+          message: 'Select the department for this role:',
+          choices: departments.map(department => ({ name: department.name, value: department.id })),
         }
+      ])
+      .then((answer) => {
+        const title = answer.name;
+        const salary = parseFloat(answer.salary); // Assuming salary is a numeric value
+        const departmentId = answer.department;
 
-        // Get the ID of the newly inserted department or existing department
-        const departmentId = deptData.insertId || deptData[0].id;
-
-        // Then, insert the role with the department ID
+        // Insert the role with the department ID
         const roleQuery = 'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)';
         db.query(roleQuery, [title, salary, departmentId], function (roleErr, roleData) {
           if (roleErr) {
@@ -136,6 +141,82 @@ function addRole() {
           }
         });
       });
-    });
+  });
 }
+
+// to do here (add view all employees)
+function viewAllEmployees() {
+db.query("select * from employee;", function (err, data) {
+  if (err) console.log(err);
+  // display all data using console.table
+  console.table(data);
+  mainMenu();
+});
+}
+
+function addEmployees() {
+  // Fetch existing roles from the database
+  db.query("SELECT id, title FROM role;", function (roleFetchErr, roles) {
+    if (roleFetchErr) {
+      console.log(roleFetchErr);
+      return;
+    }
+
+    // Fetch existing employees from the database
+    db.query("SELECT id, first_name, last_name FROM employee;", function (empFetchErr, employees) {
+      if (empFetchErr) {
+        console.log(empFetchErr);
+        return;
+      }
+
+      inquirer
+        .prompt([
+          {
+            type: "input",
+            name: "firstName",
+            message: "What is the employee's first name?",
+          },
+          {
+            type: "input",
+            name: "lastName",
+            message: "What is the employee's last name?",
+          },
+          {
+            type: "list",
+            name: "roleId",
+            message: "Select the employee's role:",
+            choices: roles.map(role => ({ name: role.title, value: role.id })),
+          },
+          {
+            type: "list",
+            name: "managerId",
+            message: "Select the employee's manager:",
+            choices: [
+              { name: "None", value: null },
+              ...employees.map(emp => ({ name: `${emp.first_name} ${emp.last_name}`, value: emp.id })),
+            ],
+          },
+        ])
+        .then((answers) => {
+          const firstName = answers.firstName;
+          const lastName = answers.lastName;
+          const roleId = answers.roleId;
+          const managerId = answers.managerId;
+
+          // Insert the new employee into the database
+          const employeeQuery = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
+          db.query(employeeQuery, [firstName, lastName, roleId, managerId], function (err, data) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log("Added a new employee!");
+              mainMenu();
+            }
+          });
+        });
+    });
+  });
+}
+
+
 mainMenu();
