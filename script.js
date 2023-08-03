@@ -79,14 +79,63 @@ function addDepartment() {
 }
 
 // to do here(use all departments function example) >>>
-function viewAllRoles () {
-
+function viewAllRoles () { 
+  db.query("select * from role;", function (err, data) {
+  if (err) console.log(err);
+  // display all data using console.table
+  console.table(data);
+  mainMenu();
+});
 }
+
+
 // to do here(add deparment function)>>
-function addRole () {
+function addRole() {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "name",
+        message: "What is the name of the new role?",
+      },
+      {
+        type: 'input',
+        name: 'salary',
+        message: 'What is the salary?',
+      },
+      {
+        type: 'input',
+        name: 'department',
+        message: 'What is the name of the department for this role?',
+      }
+    ])
+    .then((answer) => {
+      const title = answer.name;
+      const salary = parseFloat(answer.salary); // Assuming salary is a numeric value
+      const departmentName = answer.department;
 
+      // First, insert the department if it doesn't exist
+      const departmentQuery = 'INSERT INTO department (name) VALUES (?)';
+      db.query(departmentQuery, [departmentName], function (deptErr, deptData) {
+        if (deptErr) {
+          console.log(deptErr);
+          return;
+        }
+
+        // Get the ID of the newly inserted department or existing department
+        const departmentId = deptData.insertId || deptData[0].id;
+
+        // Then, insert the role with the department ID
+        const roleQuery = 'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)';
+        db.query(roleQuery, [title, salary, departmentId], function (roleErr, roleData) {
+          if (roleErr) {
+            console.log(roleErr);
+          } else {
+            console.log("Added a new role!");
+            mainMenu();
+          }
+        });
+      });
+    });
 }
-
-
-
 mainMenu();
