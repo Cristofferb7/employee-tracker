@@ -40,7 +40,9 @@ function mainMenu() {
       } else if (answer.input == "view all employees") {
       viewAllEmployees();
     }  else if (answer.input == "add employee") {
-      addEmployees();}
+      addEmployees();
+    } else if (answer.input == "udpate employee role") {
+      updateEmployee();}
 
     });
 }
@@ -96,7 +98,7 @@ function viewAllRoles () {
 }
 
 
-// to do here(add deparment function)>>
+// to do here(add role function)>>
 
 function addRole() {
   // Fetch existing department names from the database
@@ -151,12 +153,16 @@ function viewAllEmployees() {
       e.id,
       e.first_name,
       e.last_name,
-      r.title AS role,
+      r.title AS job_title,
+      d.name AS department,
+      r.salary,
       CONCAT(m.first_name, ' ', m.last_name) AS manager
     FROM
       employee e
     LEFT JOIN
       role r ON e.role_id = r.id
+    LEFT JOIN
+      department d ON r.department_id = d.id
     LEFT JOIN
       employee m ON e.manager_id = m.id;
   `;
@@ -171,6 +177,7 @@ function viewAllEmployees() {
   });
 }
 
+// to do here (add add employees function)
 function addEmployees() {
   // Fetch existing roles from the database
   db.query("SELECT id, title FROM role;", function (roleFetchErr, roles) {
@@ -234,6 +241,59 @@ function addEmployees() {
     });
   });
 }
+
+function updateEmployee() {
+  // Fetch existing employees and roles from the database
+  db.query("SELECT id, first_name, last_name FROM employee;", function (empFetchErr, employee) {
+    if (empFetchErr) {
+      console.log(empFetchErr);
+      return;
+    }
+
+    console.log("Fetched employees:", employee);
+
+    db.query("SELECT id, title FROM role;", function (roleFetchErr, roles) {
+      if (roleFetchErr) {
+        console.log(roleFetchErr);
+        return;
+      }
+
+      console.log("Fetched roles:", roles);
+
+      inquirer
+        .prompt([
+          {
+            type: "list",
+            name: "employee",
+            message: "Select the employee to update:",
+            choices: employee.map(emp => ({ name: `${emp.first_name} ${emp.last_name}`, value: emp.id })),
+          },
+          {
+            type: "list",
+            name: "role",
+            message: "Select the new role for the employee:",
+            choices: roles.map(role => ({ name: role.title, value: role.id })),
+          },
+        ])
+        .then((answers) => {
+          const employeeId = answers.employee;
+          const roleId = answers.role;
+
+          // Update the employee's role in the database
+          const updateQuery = 'UPDATE employee SET role_id = ? WHERE id = ?';
+          db.query(updateQuery, [roleId, employeeId], function (err, data) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log("Employee role updated successfully!");
+              mainMenu();
+            }
+          });
+        });
+    });
+  });
+}
+
 
 
 mainMenu();
