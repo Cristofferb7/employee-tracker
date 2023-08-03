@@ -146,12 +146,29 @@ function addRole() {
 
 // to do here (add view all employees)
 function viewAllEmployees() {
-db.query("select * from employee;", function (err, data) {
-  if (err) console.log(err);
-  // display all data using console.table
-  console.table(data);
-  mainMenu();
-});
+  const query = `
+    SELECT 
+      e.id,
+      e.first_name,
+      e.last_name,
+      r.title AS role,
+      CONCAT(m.first_name, ' ', m.last_name) AS manager
+    FROM
+      employee e
+    LEFT JOIN
+      role r ON e.role_id = r.id
+    LEFT JOIN
+      employee m ON e.manager_id = m.id;
+  `;
+
+  db.query(query, function (err, employees) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    console.table(employees);
+    mainMenu();
+  });
 }
 
 function addEmployees() {
@@ -200,7 +217,7 @@ function addEmployees() {
         .then((answers) => {
           const firstName = answers.firstName;
           const lastName = answers.lastName;
-          const roleId = answers.roleId;
+          const roleId = answers.role;
           const managerId = answers.managerId;
 
           // Insert the new employee into the database
