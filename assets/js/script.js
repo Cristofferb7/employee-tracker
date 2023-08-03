@@ -225,8 +225,8 @@ function addEmployees() {
         .then((answers) => {
           const firstName = answers.firstName;
           const lastName = answers.lastName;
-          const roleId = answers.role;
-          const managerId = answers.managerId;
+          const roleId = answers.roleId; // Fix here: use answers.roleId instead of answers.role
+          const managerId = answers.managerId; // Fix here: use answers.managerId instead of answers.manager
 
           // Insert the new employee into the database
           const employeeQuery = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
