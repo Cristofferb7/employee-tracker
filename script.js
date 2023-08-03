@@ -41,8 +41,9 @@ function mainMenu() {
       viewAllEmployees();
     }  else if (answer.input == "add employee") {
       addEmployees();
-    } else if (answer.input == "udpate employee role") {
-      updateEmployee();}
+    } else if (answer.input == "update employee role") {
+      updateEmployee();
+    }
 
     });
 }
